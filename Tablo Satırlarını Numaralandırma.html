@@ -1,0 +1,2350 @@
+<!DOCTYPE html>
+<html lang="tr" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEBİLER</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* Temel tipografi ve karanlık çiftlik zemin rengi */
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #05100a;
+    }
+
+    /* Sabit arka plan tarla görseli */
+    .bg-farm-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .bg-farm-layer img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      filter: brightness(0.62) saturate(1.08);
+    }
+
+    /* Okunabilirliği artıran koyu gradyan örtü */
+    .bg-farm-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(5, 16, 10, 0.55) 0%, rgba(5, 16, 10, 0.82) 100%);
+    }
+
+    @keyframes titleFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes statusPulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.6; }
+    }
+
+    .animated-title {
+      background: linear-gradient(90deg, #86efac, #ecfccb, #6ee7b7, #86efac);
+      background-size: 250% 250%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: titleFlow 5s ease infinite;
+    }
+
+    .status-dot {
+      animation: statusPulse 1.8s ease-in-out infinite;
+    }
+
+    /* Yatay kaydırılabilir ekran taşıyıcısı */
+    .portal-slider {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      width: 100%;
+      height: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      touch-action: pan-x;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      cursor: grab;
+    }
+
+    .portal-slider.is-dragging {
+      cursor: grabbing;
+      scroll-snap-type: none;
+      scroll-behavior: auto;
+      user-select: none;
+    }
+
+    .portal-slider::-webkit-scrollbar {
+      display: none;
+    }
+
+    .portal-screen {
+      flex: 0 0 100%;
+      min-width: 100%;
+      width: 100%;
+      height: 100%;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      overflow-y: auto;
+      touch-action: pan-y;
+    }
+
+    .portal-slider.lock-forward {
+      overflow: hidden;
+    }
+
+    .portal-slider.lock-third-screen {
+      overflow: hidden;
+    }
+
+    /* Tarla butonu arka planında ekili ürün görseli */
+    .field-crop-btn {
+      position: relative;
+      overflow: hidden;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .field-crop-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(5, 16, 10, 0.86) 0%, rgba(5, 16, 10, 0.66) 65%, rgba(5, 16, 10, 0.84) 100%);
+      z-index: 0;
+      transition: background 0.2s ease;
+    }
+
+    .field-crop-btn:hover::before {
+      background: linear-gradient(90deg, rgba(5, 16, 10, 0.78) 0%, rgba(5, 16, 10, 0.56) 65%, rgba(5, 16, 10, 0.78) 100%);
+    }
+
+    .field-crop-btn > * {
+      position: relative;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body class="h-full w-full text-emerald-50 overflow-hidden">
+  <!-- Arka Plan Çiftlik Resmi Katmanı -->
+  <div class="bg-farm-layer" aria-hidden="true">
+    <img
+      src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=1920&q=85"
+      onerror="this.onerror=null;this.src='https://placehold.co/1920x1080/0b2216/bbf7d0?text=Tarla+Gorunumu';"
+      alt="Tarla ve ekin manzarası"
+    />
+  </div>
+  <div class="bg-farm-overlay" aria-hidden="true"></div>
+
+  <!-- Yatay Portal Ekranları -->
+  <div id="portalSlider" class="portal-slider">
+    <!-- 1. Ekran: Ana Menü ve Hava Durumu Kartı -->
+    <section class="portal-screen flex items-start justify-center pt-6 sm:pt-10 px-4 sm:px-6 pb-8" aria-label="Ana Menü">
+      <div class="w-full max-w-md space-y-4">
+        <div class="w-full rounded-2xl bg-slate-950/80 border border-emerald-400/30 shadow-xl shadow-black/50 backdrop-blur-md overflow-hidden">
+          <table class="w-full text-center border-collapse">
+            <tbody>
+              <tr class="border-b border-emerald-400/15 bg-emerald-950/40">
+                <td class="py-5 px-4">
+                  <h1 class="text-2xl sm:text-3xl font-extrabold tracking-widest animated-title">
+                    NEBİLER
+                  </h1>
+                </td>
+              </tr>
+              <tr class="border-b border-emerald-400/15">
+                <td class="py-2.5 px-4 text-xs sm:text-sm font-semibold tracking-wider uppercase text-emerald-200">
+                  Çiftlik &amp; Tarla Portalı
+                </td>
+              </tr>
+              <tr class="bg-slate-900/45">
+                <td class="py-3 px-4 text-xs sm:text-sm text-emerald-100">
+                  <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-5">
+                    <span class="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-950/70 border border-emerald-400/25 px-3 py-1">
+                      <span class="status-dot inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
+                      <span class="font-medium">Sistem Çevrimiçi</span>
+                    </span>
+                    <span id="activeUserCounter" class="font-semibold text-emerald-300">
+                      Aktif Kullanıcı: 1
+                    </span>
+                    <button
+                      type="button"
+                      onclick="toggleMusicSettingsModal()"
+                      title="Müzik Ayarları"
+                      class="inline-flex items-center justify-center gap-1.5 rounded-full bg-emerald-950/70 border border-emerald-400/30 hover:border-emerald-300 px-3 py-1 text-emerald-200 transition cursor-pointer"
+                    >
+                      <span id="musicStatusIcon">🎵</span>
+                      <span class="text-xs">⚙️</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Tablodan Ayrı Alt Hava Durumu Kutusu -->
+        <div
+          class="w-full rounded-2xl bg-slate-950/80 border border-emerald-400/30 shadow-xl shadow-black/50 backdrop-blur-md px-4 py-3.5 text-xs sm:text-sm text-emerald-100"
+          aria-label="Hava Durumu"
+        >
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-emerald-300/85 text-center mb-1">
+            Hava Durumu
+          </div>
+          <div id="weatherLocationLabel" class="text-xs font-semibold text-emerald-200 text-center mb-2.5">
+            Konya • Çumra • Küçükköy Mah.
+          </div>
+          <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-900/80 border border-amber-300/25 px-3 py-1 font-medium text-amber-200">
+              <span aria-hidden="true">🌡️</span>
+              <span id="weatherTemp">12°C</span>
+            </span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-900/80 border border-sky-300/25 px-3 py-1 font-medium text-sky-200">
+              <span aria-hidden="true">💨</span>
+              <span id="weatherWind">14 km/sa Rüzgar</span>
+            </span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-900/80 border border-emerald-300/25 px-3 py-1 font-medium text-emerald-200">
+              <span aria-hidden="true">🌧️</span>
+              <span id="weatherRain">%20 Yağmur</span>
+            </span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-900/80 border border-cyan-300/25 px-3 py-1 font-medium text-cyan-200">
+              <span aria-hidden="true">💧</span>
+              <span id="weatherPrecipitation">0.4 mm Yağış</span>
+            </span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 2. Ekran: Mevkiler ve Akordeon Tarla Listeleri -->
+    <section class="portal-screen flex flex-col" aria-label="Tarlalar">
+      <div class="w-full max-w-4xl mx-auto px-4 sm:px-6 pt-5 sm:pt-8 pb-8 flex-1 flex flex-col justify-center">
+        <div class="w-full rounded-2xl bg-slate-950/80 border border-emerald-400/30 shadow-2xl shadow-black/50 backdrop-blur-md p-5 sm:p-6">
+          <div class="flex items-center justify-between gap-3 mb-4">
+            <button
+              type="button"
+              onclick="navigateToScreen(0)"
+              class="rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-emerald-400/30 px-3.5 py-2 text-xs sm:text-sm font-medium text-emerald-200 transition cursor-pointer"
+            >
+              ← Ana Menü
+            </button>
+            <button
+              type="button"
+              onclick="toggleMevkiGearPanel()"
+              aria-label="Mevki Ayarları"
+              class="rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-300/45 p-2.5 text-amber-200 shadow-sm shadow-amber-950/50 transition cursor-pointer"
+            >
+              ⚙
+            </button>
+          </div>
+
+          <h2 class="text-xl sm:text-2xl font-bold text-emerald-200 text-center mb-5">
+            MEVKİ
+          </h2>
+
+          <div id="locationButtonsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Ekran: Ayrı Sulama Takip Tablosu Sayfası (Yalnızca Sulama Takip butonuna basılınca açılır) -->
+    <section class="portal-screen flex flex-col" aria-label="Sulama Takip Tablosu Sayfası">
+      <div class="w-full max-w-4xl mx-auto px-4 sm:px-6 pt-5 sm:pt-8 pb-8 flex-1 flex flex-col justify-center">
+        <div class="w-full rounded-2xl bg-slate-950/90 border border-cyan-400/35 shadow-2xl shadow-black/60 backdrop-blur-md p-5 sm:p-6 space-y-5">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-cyan-400/20 pb-3.5">
+            <button
+              type="button"
+              onclick="exitIrrigationPage()"
+              class="rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-cyan-400/35 px-3.5 py-2 text-xs sm:text-sm font-medium text-cyan-200 transition cursor-pointer"
+            >
+              ← Mevkilere Dön
+            </button>
+            <div class="text-right">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-cyan-300/80">
+                Sulama Takip Sayfası
+              </div>
+              <div id="irrigationPageFieldTitle" class="text-base sm:text-xl font-bold text-cyan-100">
+                Tarla Seçilmedi
+              </div>
+              <div id="irrigationPageFieldMeta" class="text-xs text-cyan-200/80">
+                Mevki ve ürün bilgisi burada görünür
+              </div>
+            </div>
+          </div>
+
+          <div id="irrigationDedicatedTableContainer" class="rounded-xl bg-slate-900/80 border border-cyan-400/25 p-4 overflow-x-auto">
+            <div class="text-xs sm:text-sm text-cyan-200/80 text-center py-6">
+              Sulama tablosuna erişmek için önce bir tarlanın <strong>Sulama Takip</strong> butonuna basın.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Ekran: Ayrı Diğer İşlemler Tablosu Sayfası -->
+    <section class="portal-screen flex flex-col" aria-label="Diğer İşlemler Tablosu Sayfası">
+      <div class="w-full max-w-4xl mx-auto px-4 sm:px-6 pt-5 sm:pt-8 pb-8 flex-1 flex flex-col justify-center">
+        <div class="w-full rounded-2xl bg-slate-950/90 border border-amber-400/35 shadow-2xl shadow-black/60 backdrop-blur-md p-5 sm:p-6 space-y-5">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-amber-400/20 pb-3.5">
+            <button
+              type="button"
+              onclick="navigateToScreen(1)"
+              class="rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-amber-400/35 px-3.5 py-2 text-xs sm:text-sm font-medium text-amber-200 transition cursor-pointer"
+            >
+              ← Mevkilere Dön
+            </button>
+            <div class="text-right">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-amber-300/80">
+                Diğer İşlemler Tablosu Sayfası
+              </div>
+              <div id="otherPageFieldTitle" class="text-base sm:text-xl font-bold text-amber-100">
+                Tarla Seçilmedi
+              </div>
+              <div id="otherPageFieldMeta" class="text-xs text-amber-200/80">
+                Mevki ve ürün bilgisi burada görünür
+              </div>
+            </div>
+          </div>
+
+          <div id="otherDedicatedTableContainer" class="rounded-xl bg-slate-900/80 border border-amber-400/25 p-4 overflow-x-auto">
+            <div class="text-xs sm:text-sm text-amber-200/80 text-center py-6">
+              Diğer işlemler tablosuna erişmek için bir tarlanın <strong>Diğer İşlemler</strong> butonuna basın.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Tablo Sütun ve Satır Yönetim Penceresi (Çark Butonu) -->
+  <div
+    id="tableStructureModal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="tableStructureModalTitle"
+    onclick="handleTableStructureBackdropClick(event)"
+  >
+    <div class="w-full max-w-lg rounded-2xl bg-gradient-to-b from-slate-900/95 via-slate-950/95 to-stone-950/95 border border-emerald-400/40 shadow-2xl p-5 sm:p-6 space-y-4 text-emerald-100">
+      <div class="flex items-center justify-between gap-3 border-b border-emerald-400/20 pb-3">
+        <div>
+          <h3 id="tableStructureModalTitle" class="text-sm sm:text-base font-bold text-emerald-200">
+            Tablo Sütun ve Satır Ayarları
+          </h3>
+          <div id="tableStructureSubtitle" class="text-xs text-emerald-300/80"></div>
+        </div>
+        <button
+          type="button"
+          onclick="closeTableStructureModal()"
+          aria-label="Tablo Ayarları Penceresini Kapat"
+          class="rounded-lg bg-slate-800 hover:bg-slate-700 border border-emerald-300/30 px-2.5 py-1 text-xs font-semibold text-emerald-100 transition cursor-pointer"
+        >
+          ✕
+        </button>
+      </div>
+
+      <!-- Yeni Sütun Ekleme (İsimli) -->
+      <div class="rounded-xl bg-slate-900/80 border border-emerald-400/20 p-3 space-y-2">
+        <div class="text-xs font-bold uppercase tracking-wider text-cyan-200">
+          Yeni Sütun Ekle
+        </div>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input
+            id="newCustomColumnNameInput"
+            type="text"
+            placeholder="Sütun adı (örn. Dekara Su, Not...)"
+            class="flex-1 rounded-lg bg-slate-950 border border-emerald-400/30 px-3 py-2 text-xs sm:text-sm text-emerald-50 placeholder-emerald-200/40 focus:outline-none focus:border-emerald-300"
+          />
+          <button
+            type="button"
+            onclick="addCustomTableColumn()"
+            class="rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 py-2 text-xs sm:text-sm transition cursor-pointer"
+          >
+            + Sütun Ekle
+          </button>
+        </div>
+        <div id="customColumnChips" class="flex flex-wrap gap-1.5 pt-1"></div>
+      </div>
+
+      <!-- Yeni Satır Ekleme (İsimli + Sütun Değerleri) -->
+      <div class="rounded-xl bg-slate-900/80 border border-emerald-400/20 p-3 space-y-2.5">
+        <div class="text-xs font-bold uppercase tracking-wider text-amber-200">
+          Yeni Satır Ekle
+        </div>
+        <input
+          id="newCustomRowNameInput"
+          type="text"
+          placeholder="Satır adı / başlığı (örn. 1. Sulama Turu, Kasım Bakımı...)"
+          class="w-full rounded-lg bg-slate-950 border border-emerald-400/30 px-3 py-2 text-xs sm:text-sm text-emerald-50 placeholder-emerald-200/40 focus:outline-none focus:border-amber-300"
+        />
+        <div id="newRowDynamicFields" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+        <button
+          type="button"
+          onclick="addCustomTableRow()"
+          class="w-full rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2 px-4 text-xs sm:text-sm transition cursor-pointer"
+        >
+          + İsimli Satır Ekle
+        </button>
+      </div>
+
+      <div id="tableStructureFeedback" class="text-xs text-emerald-300 min-h-[1rem]"></div>
+
+      <button
+        type="button"
+        onclick="closeTableStructureModal()"
+        class="w-full rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-emerald-400/30 py-2.5 px-4 text-xs sm:text-sm font-semibold text-emerald-200 transition cursor-pointer"
+      >
+        Kapat
+      </button>
+    </div>
+  </div>
+
+  <!-- Mevki Ekleme / Silme Ayar Penceresi (Modal) -->
+  <div
+    id="mevkiGearModal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="mevkiModalTitle"
+    onclick="handleModalBackdropClick(event)"
+  >
+    <div class="w-full max-w-md rounded-2xl bg-gradient-to-b from-amber-950/95 via-slate-950/95 to-stone-950/95 border border-amber-400/40 shadow-2xl shadow-amber-950/70 p-5 sm:p-6 space-y-4">
+      <div class="flex items-center justify-between gap-3 border-b border-amber-400/20 pb-3">
+        <h3 id="mevkiModalTitle" class="text-sm sm:text-base font-bold text-amber-200">
+          Mevki Ayarları (Ekle / Sil)
+        </h3>
+        <button
+          type="button"
+          onclick="closeMevkiGearModal()"
+          aria-label="Ayar Penceresini Kapat"
+          class="rounded-lg bg-amber-900/50 hover:bg-amber-800/60 border border-amber-300/30 px-2.5 py-1 text-xs font-semibold text-amber-100 transition cursor-pointer"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-2">
+        <input
+          id="newMevkiNameInput"
+          type="text"
+          placeholder="Yeni mevki adı..."
+          class="flex-1 rounded-xl bg-stone-900/90 border border-amber-400/35 px-3.5 py-2 text-sm text-amber-50 placeholder-amber-200/40 focus:outline-none focus:border-amber-300"
+        />
+        <button
+          type="button"
+          onclick="addMevkiItem()"
+          class="rounded-xl bg-amber-600 hover:bg-amber-500 border border-amber-200/40 px-4 py-2 text-sm font-semibold text-stone-950 transition cursor-pointer"
+        >
+          + Mevki Ekle
+        </button>
+      </div>
+
+      <div id="mevkiDeleteList" class="max-h-56 overflow-y-auto space-y-2 pr-1"></div>
+      <div id="mevkiGearFeedback" class="text-xs text-amber-300 min-h-[1rem]"></div>
+
+      <button
+        type="button"
+        onclick="closeMevkiGearModal()"
+        class="w-full rounded-xl bg-amber-950/80 hover:bg-amber-900/80 border border-amber-400/35 py-2.5 px-4 text-xs sm:text-sm font-semibold text-amber-200 transition cursor-pointer"
+      >
+        Kapat
+      </button>
+    </div>
+  </div>
+
+  <!-- Seçilen Mevki İçin Tarla Ekleme / İsim Verme / Kaldırma Modal Penceresi -->
+  <div
+    id="fieldManageModal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="fieldManageModalTitle"
+    onclick="handleFieldManageBackdropClick(event)"
+  >
+    <div class="w-full max-w-lg rounded-2xl bg-gradient-to-b from-emerald-950/95 via-slate-950/95 to-stone-950/95 border border-emerald-400/40 shadow-2xl shadow-emerald-950/70 p-5 sm:p-6 space-y-4 text-emerald-100">
+      <div class="flex items-center justify-between gap-3 border-b border-emerald-400/20 pb-3">
+        <div>
+          <h3 id="fieldManageModalTitle" class="text-sm sm:text-base font-bold text-emerald-200">
+            Tarla Yönetimi (Ekle / İsim Ver / Kaldır)
+          </h3>
+          <div id="fieldManageLocationSubtitle" class="text-xs text-emerald-300/80"></div>
+        </div>
+        <button
+          type="button"
+          onclick="closeFieldManageModal()"
+          aria-label="Tarla Yönetimi Penceresini Kapat"
+          class="rounded-lg bg-emerald-900/50 hover:bg-emerald-800/60 border border-emerald-300/30 px-2.5 py-1 text-xs font-semibold text-emerald-100 transition cursor-pointer"
+        >
+          ✕
+        </button>
+      </div>
+
+      <!-- Yeni Tarla Ekleme Formu -->
+      <form onsubmit="addFieldToLocation(event)" class="rounded-xl bg-slate-900/80 border border-emerald-400/25 p-3 space-y-2.5">
+        <div class="text-xs font-bold uppercase tracking-wider text-emerald-300">
+          Yeni Tarla Ekle
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <input
+            id="newFieldNameInput"
+            type="text"
+            placeholder="Tarla adı (örn. Tarla 2)"
+            class="rounded-lg bg-slate-950 border border-emerald-400/30 px-3 py-2 text-xs sm:text-sm text-emerald-50 placeholder-emerald-200/40 focus:outline-none focus:border-emerald-300"
+          />
+          <select
+            id="newFieldCropInput"
+            aria-label="Tarla Ürünü"
+            class="rounded-lg bg-slate-950 border border-emerald-400/30 px-3 py-2 text-xs sm:text-sm text-emerald-50 focus:outline-none focus:border-emerald-300"
+          >
+            <option value="Buğday">Buğday</option>
+            <option value="Arpa">Arpa</option>
+            <option value="Mısır">Mısır</option>
+            <option value="Şeker Pancarı">Şeker Pancarı</option>
+            <option value="Ayçekirdeği">Ayçekirdeği</option>
+            <option value="Kabak Çekirdeği">Kabak Çekirdeği</option>
+          </select>
+          <input
+            id="newFieldDonumInput"
+            type="number"
+            min="1"
+            step="any"
+            placeholder="Dönüm (örn. 40)"
+            class="rounded-lg bg-slate-950 border border-emerald-400/30 px-3 py-2 text-xs sm:text-sm text-emerald-50 placeholder-emerald-200/40 focus:outline-none focus:border-emerald-300"
+          />
+        </div>
+        <button
+          type="submit"
+          class="w-full rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2 px-4 text-xs sm:text-sm transition cursor-pointer"
+        >
+          + Tarla Ekle
+        </button>
+      </form>
+
+      <!-- Mevcut Tarlalar: İsim Verme ve Kaldırma Listesi -->
+      <div class="space-y-2">
+        <div class="text-xs font-bold uppercase tracking-wider text-amber-200">
+          Kayıtlı Tarlalar (İsim Ver / Kaldır)
+        </div>
+        <div id="fieldManageList" class="max-h-60 overflow-y-auto space-y-2 pr-1"></div>
+      </div>
+
+      <div id="fieldManageFeedback" class="text-xs text-emerald-300 min-h-[1rem]"></div>
+
+      <button
+        type="button"
+        onclick="closeFieldManageModal()"
+        class="w-full rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-emerald-400/30 py-2.5 px-4 text-xs sm:text-sm font-semibold text-emerald-200 transition cursor-pointer"
+      >
+        Kapat
+      </button>
+    </div>
+  </div>
+
+  <!-- Arka Plan Müzik Ayarları Modal Penceresi -->
+  <div
+    id="musicSettingsModal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="musicModalTitle"
+    onclick="handleMusicModalBackdropClick(event)"
+  >
+    <div class="w-full max-w-sm rounded-2xl bg-gradient-to-b from-emerald-950/95 via-slate-950/95 to-stone-950/95 border border-emerald-400/40 shadow-2xl shadow-emerald-950/70 p-5 space-y-4 text-emerald-100">
+      <div class="flex items-center justify-between gap-3 border-b border-emerald-400/20 pb-3">
+        <h3 id="musicModalTitle" class="text-sm sm:text-base font-bold text-emerald-200 flex items-center gap-2">
+          <span>🎵</span> Arka Plan Müzik Ayarları
+        </h3>
+        <button
+          type="button"
+          onclick="closeMusicSettingsModal()"
+          aria-label="Müzik Ayarlarını Kapat"
+          class="rounded-lg bg-emerald-900/50 hover:bg-emerald-800/60 border border-emerald-300/30 px-2.5 py-1 text-xs font-semibold text-emerald-100 transition cursor-pointer"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-medium">Müzik Durumu:</span>
+          <button
+            id="toggleMusicBtn"
+            type="button"
+            onclick="toggleMusicPlayState()"
+            class="rounded-xl px-4 py-2 text-xs font-bold transition cursor-pointer border bg-emerald-500/20 border-emerald-400/40 text-emerald-200"
+          >
+            🔊 Açık
+          </button>
+        </div>
+
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between text-xs">
+            <span>Ses Seviyesi:</span>
+            <span id="volumeValueLabel" class="font-semibold text-emerald-300">40%</span>
+          </div>
+          <input
+            id="musicVolumeSlider"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value="0.4"
+            oninput="changeMusicVolume(this.value)"
+            class="w-full accent-emerald-400 cursor-pointer"
+          />
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onclick="closeMusicSettingsModal()"
+        class="w-full rounded-xl bg-emerald-950/80 hover:bg-emerald-900/80 border border-emerald-400/35 py-2.5 px-4 text-xs sm:text-sm font-semibold text-emerald-200 transition cursor-pointer"
+      >
+        Tamam
+      </button>
+    </div>
+  </div>
+
+  <!-- Gizli Arka Plan Müzik Elemanı (Telif hakkı bulunmayan, relaxing farm/nature temalı döngüsel parça) -->
+  <audio
+    id="bgAudio"
+    loop
+    preload="auto"
+    src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3"
+  ></audio>
+
+  <script>
+    const STORAGE_KEY = 'nebiler_portal_locations_v1';
+
+    // Başlangıç mevki, tarla, sulama ve diğer işlem kayıtları
+    const initialLocations = [
+      {
+        name: 'Tatlıkuyu',
+        fields: [
+          {
+            id: 1,
+            name: 'Tatlıkuyu — Tarla 1',
+            donum: 45,
+            crop: 'Buğday',
+            irrigationLogs: [
+              { date: '18.11.2026', method: 'Yağmurlama', duration: '6 saat', waterAmount: '38 mm', status: 'Tamamlandı' },
+              { date: '25.11.2026', method: 'Damla / Hat', duration: '4.5 saat', waterAmount: '26 mm', status: 'Planlandı' }
+            ],
+            otherLogs: [
+              { date: '05.11.2026', task: 'Taban Gübrelemesi (DAP)', detail: '18 kg/dönüm uygulandı', status: 'Tamamlandı' },
+              { date: '14.11.2026', task: 'Yabancı Ot Kontrolü', detail: 'Tarla kenarı ve çıkış kontrolü', status: 'İyi' }
+            ]
+          }
+        ]
+      },
+      {
+        name: 'Helvacı',
+        fields: [
+          {
+            id: 1,
+            name: 'Helvacı — Tarla 1',
+            donum: 60,
+            crop: 'Arpa',
+            irrigationLogs: [
+              { date: '16.11.2026', method: 'Yağmurlama', duration: '7 saat', waterAmount: '42 mm', status: 'Tamamlandı' }
+            ],
+            otherLogs: [
+              { date: '03.11.2026', task: 'Ekim & Mibzer Ayarı', detail: 'Sıra üzeri tohum yoğunluğu kontrol edildi', status: 'Tamamlandı' }
+            ]
+          },
+          {
+            id: 2,
+            name: 'Helvacı — Tarla 2',
+            donum: 38,
+            crop: 'Ayçiçeği',
+            irrigationLogs: [
+              { date: '12.11.2026', method: 'Salma / Hat', duration: '5 saat', waterAmount: '30 mm', status: 'Tamamlandı' }
+            ],
+            otherLogs: [
+              { date: '08.11.2026', task: 'Toprak Nem Ölçümü', detail: '30 cm derinlik nem dengesi ölçüldü', status: 'Normal' }
+            ]
+          }
+        ]
+      },
+      {
+        name: 'Özünkolu',
+        fields: [
+          {
+            id: 1,
+            name: 'Özünkolu — Tarla 1',
+            donum: 52,
+            crop: 'Mısır',
+            irrigationLogs: [
+              { date: '19.11.2026', method: 'Damla Sulama', duration: '8 saat', waterAmount: '45 mm', status: 'Tamamlandı' }
+            ],
+            otherLogs: [
+              { date: '10.11.2026', task: 'Kuyu & Pompa Bakımı', detail: 'Basınç ve filtre temizliği yapıldı', status: 'Tamamlandı' }
+            ]
+          },
+          {
+            id: 2,
+            name: 'Özünkolu — Tarla 2',
+            donum: 34,
+            crop: 'Nohut',
+            irrigationLogs: [
+              { date: '15.11.2026', method: 'Yağmurlama', duration: '4 saat', waterAmount: '24 mm', status: 'Beklemede' }
+            ],
+            otherLogs: [
+              { date: '07.11.2026', task: 'Sınır & Çit Kontrolü', detail: 'Mevki giriş hattı kontrol edildi', status: 'Tamamlandı' }
+            ]
+          }
+        ]
+      },
+      {
+        name: 'Çatalhöyük',
+        fields: [
+          {
+            id: 1,
+            name: 'Çatalhöyük — Tarla 1',
+            donum: 75,
+            crop: 'Buğday',
+            irrigationLogs: [
+              { date: '20.11.2026', method: 'Yağmurlama', duration: '9 saat', waterAmount: '50 mm', status: 'Tamamlandı' }
+            ],
+            otherLogs: [
+              { date: '04.11.2026', task: 'Üst Gübre Planı', detail: 'İlkbahar dönemi için stok notu alındı', status: 'Planlandı' }
+            ]
+          },
+          {
+            id: 2,
+            name: 'Çatalhöyük — Tarla 2',
+            donum: 48,
+            crop: 'Şeker Pancarı',
+            irrigationLogs: [
+              { date: '17.11.2026', method: 'Yağmurlama', duration: '6.5 saat', waterAmount: '36 mm', status: 'Tamamlandı' }
+            ],
+            otherLogs: [
+              { date: '11.11.2026', task: 'Drenaj Hattı Kontrolü', detail: 'Su birikintisi gözlenmedi', status: 'İyi' }
+            ]
+          },
+          {
+            id: 3,
+            name: 'Çatalhöyük — Tarla 3',
+            donum: 40,
+            crop: 'Arpa',
+            irrigationLogs: [
+              { date: '13.11.2026', method: 'Yağmurlama', duration: '5 saat', waterAmount: '28 mm', status: 'Tamamlandı' }
+            ],
+            otherLogs: [
+              { date: '06.11.2026', task: 'Kayıt Güncelleme', detail: 'Parsel ve dönüm verisi doğrulandı', status: 'Tamamlandı' }
+            ]
+          }
+        ]
+      },
+      {
+        name: 'Sırçak',
+        fields: [
+          {
+            id: 1,
+            name: 'Sırçak — Tarla 1',
+            donum: 55,
+            crop: 'Ayçiçeği',
+            irrigationLogs: [
+              { date: '21.11.2026', method: 'Damla Sulama', duration: '6 saat', waterAmount: '34 mm', status: 'Planlandı' }
+            ],
+            otherLogs: [
+              { date: '09.11.2026', task: 'Yol & Ulaşım Notu', detail: 'Traktör geçiş güzergahı açık', status: 'Tamamlandı' }
+            ]
+          }
+        ]
+      }
+    ];
+
+    // localStorage üzerinden kayıtlı mevki ve tarla verilerini yükler
+    function loadInitialLocations() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch (err) {
+        console.warn('Veri okuma hatası:', err);
+      }
+      return JSON.parse(JSON.stringify(initialLocations));
+    }
+
+    // Güncel verileri localStorage'a kaydeder
+    function saveLocations() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(portalState.locations));
+      } catch (err) {
+        console.warn('Veri kaydetme hatası:', err);
+      }
+    }
+
+    const portalState = {
+      activeUsers: 1,
+      currentScreenIndex: 0,
+      scrollLockedCompletely: false,
+      locations: loadInitialLocations(),
+      expandedLocationIndex: null,
+      expandedFieldKey: null,
+      expandedFieldTab: {},
+      pendingDeleteIndex: null,
+      managingLocationIndex: null,
+      pendingFieldDeleteIndex: null,
+      selectedLocationIndex: null,
+      selectedFieldIndex: null,
+      activeFieldTab: null,
+      irrigationPageUnlocked: false,
+      structureModalTargetType: null
+    };
+
+    const bgAudio = document.getElementById('bgAudio');
+    let isMusicPlaying = false;
+
+    function initBackgroundMusic() {
+      if (!bgAudio) return;
+      bgAudio.volume = 0.4;
+
+      // Otomatik çalma denemesi (Tarayıcı otomatik çalmayı engellerse ilk etkileşimde çalmaya başlar)
+      const playPromise = bgAudio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            isMusicPlaying = true;
+            updateMusicUI();
+          })
+          .catch(() => {
+            isMusicPlaying = false;
+            updateMusicUI();
+            
+            // Kullanıcı portalın herhangi bir yerine tıkladığında veya dokunduğunda müziği başlat
+            const startOnInteraction = () => {
+              bgAudio.play().then(() => {
+                isMusicPlaying = true;
+                updateMusicUI();
+              }).catch(() => {});
+              window.removeEventListener('click', startOnInteraction);
+              window.removeEventListener('touchstart', startOnInteraction);
+            };
+            window.addEventListener('click', startOnInteraction, { once: true });
+            window.addEventListener('touchstart', startOnInteraction, { once: true });
+          });
+      }
+    }
+
+    function toggleMusicPlayState() {
+      if (!bgAudio) return;
+      if (isMusicPlaying) {
+        bgAudio.pause();
+        isMusicPlaying = false;
+      } else {
+        bgAudio.play().then(() => {
+          isMusicPlaying = true;
+          updateMusicUI();
+        }).catch((e) => console.warn('Müzik çalınamadı:', e));
+      }
+      updateMusicUI();
+    }
+
+    function changeMusicVolume(val) {
+      if (!bgAudio) return;
+      bgAudio.volume = parseFloat(val);
+      const label = document.getElementById('volumeValueLabel');
+      if (label) {
+        label.textContent = `${Math.round(val * 100)}%`;
+      }
+    }
+
+    function updateMusicUI() {
+      const statusIcon = document.getElementById('musicStatusIcon');
+      const toggleBtn = document.getElementById('toggleMusicBtn');
+
+      if (statusIcon) {
+        statusIcon.textContent = isMusicPlaying ? '🎵' : '🔇';
+      }
+      if (toggleBtn) {
+        if (isMusicPlaying) {
+          toggleBtn.textContent = '🔊 Açık';
+          toggleBtn.className = 'rounded-xl px-4 py-2 text-xs font-bold transition cursor-pointer border bg-emerald-500/20 border-emerald-400/40 text-emerald-200';
+        } else {
+          toggleBtn.textContent = '🔇 Kapalı';
+          toggleBtn.className = 'rounded-xl px-4 py-2 text-xs font-bold transition cursor-pointer border bg-red-500/20 border-red-400/40 text-red-200';
+        }
+      }
+    }
+
+    function toggleMusicSettingsModal() {
+      const modal = document.getElementById('musicSettingsModal');
+      if (!modal) return;
+      modal.classList.toggle('hidden');
+    }
+
+    function closeMusicSettingsModal() {
+      const modal = document.getElementById('musicSettingsModal');
+      if (!modal) return;
+      modal.classList.add('hidden');
+    }
+
+    function handleMusicModalBackdropClick(event) {
+      if (event.target && event.target.id === 'musicSettingsModal') {
+        closeMusicSettingsModal();
+      }
+    }
+
+    const sliderEl = document.getElementById('portalSlider');
+    let isPointerDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragStartScrollLeft = 0;
+    let hasDraggedDistance = false;
+    let isTouchSwiping = false;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartScrollLeft = 0;
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Tarla ürününe göre arka plan görseli URL'si döndürür
+    function getCropBackgroundUrl(cropName) {
+      const normalized = String(cropName || '').toLocaleLowerCase('tr').trim();
+      const cropImages = {
+        'buğday': 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=900&q=75',
+        'bugday': 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=900&q=75',
+        'arpa': 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=75',
+        'mısır': 'https://images.unsplash.com/photo-1601593768799-76fc2332fdab?auto=format&fit=crop&w=900&q=75',
+        'misir': 'https://images.unsplash.com/photo-1601593768799-76fc2332fdab?auto=format&fit=crop&w=900&q=75',
+        'şeker pancarı': 'https://images.unsplash.com/photo-1593105544559-ecb03bf76f82?auto=format&fit=crop&w=900&q=75',
+        'seker pancari': 'https://images.unsplash.com/photo-1593105544559-ecb03bf76f82?auto=format&fit=crop&w=900&q=75',
+        'ayçekirdeği': 'https://images.unsplash.com/photo-1597848212624-a19eb35e2651?auto=format&fit=crop&w=900&q=75',
+        'aycekirdegi': 'https://images.unsplash.com/photo-1597848212624-a19eb35e2651?auto=format&fit=crop&w=900&q=75',
+        'kabak çekirdeği': 'https://images.unsplash.com/photo-1506917728037-b6af01a7d403?auto=format&fit=crop&w=900&q=75',
+        'kabak cekirdegi': 'https://images.unsplash.com/photo-1506917728037-b6af01a7d403?auto=format&fit=crop&w=900&q=75'
+      };
+
+      if (cropImages[normalized]) {
+        return cropImages[normalized];
+      }
+
+      const fallbackText = encodeURIComponent(cropName || 'Tarla');
+      return `https://placehold.co/800x240/0b2216/bbf7d0?text=${fallbackText}`;
+    }
+
+    function formatTodayTurkish() {
+      const now = new Date();
+      const dd = String(now.getDate()).padStart(2, '0');
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const yyyy = now.getFullYear();
+      return `${dd}.${mm}.${yyyy}`;
+    }
+
+    function updateActiveUserLabel() {
+      const counterEl = document.getElementById('activeUserCounter');
+      if (counterEl) {
+        counterEl.textContent = `Aktif Kullanıcı: ${portalState.activeUsers}`;
+      }
+    }
+
+    function syncScrollLockClasses() {
+      if (!sliderEl) return;
+      sliderEl.classList.remove('lock-forward', 'lock-third-screen');
+      if (portalState.scrollLockedCompletely) {
+        sliderEl.classList.add('lock-forward');
+      }
+    }
+
+    function snapToNearestOrDirectionalScreen(deltaX, screenWidth) {
+      if (!sliderEl || screenWidth <= 0) return;
+      const maxIndex = Math.max(0, sliderEl.children.length - 1);
+      const currentScroll = sliderEl.scrollLeft;
+      let targetIndex = Math.round(currentScroll / screenWidth);
+
+      if (Math.abs(deltaX) > 45) {
+        // 4. sayfadan (index 3) sağa kaydırarak dönerken 3. sayfayı (index 2) atlayıp 2. sayfaya (index 1) geçer
+        if (deltaX > 0 && portalState.currentScreenIndex === 3) {
+          targetIndex = 1;
+        }
+        // Sola kaydırma (deltaX < 0): 2., 3. ve 4. sayfalarda ileri geçişi kapatır
+        else if (
+          deltaX < 0 &&
+          (portalState.currentScreenIndex === 1 ||
+            portalState.currentScreenIndex === 2 ||
+            portalState.currentScreenIndex === 3)
+        ) {
+          targetIndex = portalState.currentScreenIndex;
+        } else {
+          targetIndex = deltaX < 0
+            ? portalState.currentScreenIndex + 1
+            : portalState.currentScreenIndex - 1;
+        }
+      } else if (
+        targetIndex > portalState.currentScreenIndex &&
+        (portalState.currentScreenIndex === 1 ||
+          portalState.currentScreenIndex === 2 ||
+          portalState.currentScreenIndex === 3)
+      ) {
+        targetIndex = portalState.currentScreenIndex;
+      } else if (portalState.currentScreenIndex === 3 && targetIndex === 2) {
+        targetIndex = 1;
+      }
+
+      targetIndex = Math.max(0, Math.min(maxIndex, targetIndex));
+      navigateToScreen(targetIndex);
+    }
+
+    // Hedef ekrana (0: Ana Menü, 1: Mevkiler, 2: Sulama Takip Sayfası, 3: Diğer İşlemler Sayfası) kaydırır
+    function navigateToScreen(screenIndex) {
+      const maxIndex = sliderEl ? Math.max(0, sliderEl.children.length - 1) : 3;
+      let clampedIndex = Math.max(0, Math.min(maxIndex, screenIndex));
+
+      // Doğrudan bir tarla işlemi seçilmeden 1. ekrandan sonraki sayfalara geçişi engeller
+      const hasSelectedField =
+        portalState.selectedLocationIndex !== null && portalState.selectedFieldIndex !== null;
+      if (portalState.currentScreenIndex === 1 && clampedIndex > 1 && !hasSelectedField) {
+        clampedIndex = 1;
+      }
+
+      // 3. sayfaya (index 2) yalnızca Sulama Takip butonu veya açık kilit ile geçişe izin verir
+      if (clampedIndex === 2 && !portalState.irrigationPageUnlocked) {
+        clampedIndex = portalState.currentScreenIndex === 2 ? 2 : 1;
+      }
+
+      if (clampedIndex === 2) {
+        portalState.irrigationPageUnlocked = true;
+        renderDedicatedIrrigationPage();
+      } else if (clampedIndex === 3) {
+        renderDedicatedOtherPage();
+      }
+
+      portalState.currentScreenIndex = clampedIndex;
+      syncScrollLockClasses();
+
+      if (sliderEl) {
+        const screenWidth = sliderEl.clientWidth || window.innerWidth;
+        const previousSnap = sliderEl.style.scrollSnapType;
+        sliderEl.style.scrollSnapType = 'none';
+        sliderEl.scrollTo({
+          left: screenWidth * clampedIndex,
+          behavior: 'smooth'
+        });
+        window.setTimeout(() => {
+          if (sliderEl) {
+            sliderEl.style.scrollSnapType = previousSnap || '';
+          }
+        }, 420);
+      }
+    }
+
+    // Sulama Takip butonuna basıldığında kilit açılır ve ayrı Sulama Tablosu sayfasına (index 2) yönlendirilir
+    function openDedicatedIrrigationPage(locationIndex, fieldIndex) {
+      portalState.selectedLocationIndex = locationIndex;
+      portalState.selectedFieldIndex = fieldIndex;
+      portalState.activeFieldTab = 'irrigation';
+      portalState.irrigationPageUnlocked = true;
+      renderDedicatedIrrigationPage();
+      renderDedicatedOtherPage();
+      navigateToScreen(2);
+    }
+
+    // Diğer İşlemler butonuna basıldığında seçili tarlanın Diğer İşlemler sayfasına (index 3) yönlendirir
+    function openDedicatedOtherPage(locationIndex, fieldIndex) {
+      portalState.selectedLocationIndex = locationIndex;
+      portalState.selectedFieldIndex = fieldIndex;
+      portalState.activeFieldTab = 'other';
+      portalState.irrigationPageUnlocked = true;
+      renderDedicatedOtherPage();
+      renderDedicatedIrrigationPage();
+      navigateToScreen(3);
+    }
+
+    // Sulama tablosu sayfasından çıkarken erişim kilidini yeniden devreye alır
+    function exitIrrigationPage() {
+      portalState.irrigationPageUnlocked = false;
+      navigateToScreen(1);
+    }
+
+    // Ayrı Sulama Takip sayfasındaki tablo ve kayıt formunu çizer
+    function renderDedicatedIrrigationPage() {
+      const titleEl = document.getElementById('irrigationPageFieldTitle');
+      const metaEl = document.getElementById('irrigationPageFieldMeta');
+      const container = document.getElementById('irrigationDedicatedTableContainer');
+
+      const loc = portalState.locations[portalState.selectedLocationIndex];
+      const field = loc && loc.fields ? loc.fields[portalState.selectedFieldIndex] : null;
+      const today = formatTodayTurkish();
+
+      if (titleEl) {
+        titleEl.textContent = field ? field.name : 'Tarla Seçilmedi';
+      }
+      if (metaEl) {
+        metaEl.textContent = field
+          ? `${loc.name} Mevkisi • Ürün: ${field.crop} • Alan: ${field.donum} dönüm`
+          : 'Mevki ve ürün bilgisi burada görünür';
+      }
+
+      if (!container) return;
+
+      if (!field || !portalState.irrigationPageUnlocked) {
+        container.innerHTML = `
+          <div class="text-xs sm:text-sm text-cyan-200/80 text-center py-6">
+            Bu sayfaya yalnızca tarlanın <strong>Sulama Takip</strong> butonuna basılarak erişilebilir.
+          </div>
+        `;
+        return;
+      }
+
+      const customCols = Array.isArray(field.customIrrigationColumns) ? field.customIrrigationColumns : [];
+      const logs = field.irrigationLogs || [];
+      const rowsHtml = logs.length
+        ? logs
+            .map(
+              (item, idx) => `
+              <tr class="border-b border-cyan-400/15 hover:bg-cyan-950/40 transition">
+                <td class="py-2.5 px-3 text-xs sm:text-sm font-bold text-cyan-300 whitespace-nowrap">${idx + 1}</td>
+                <td class="py-2.5 px-3 text-xs sm:text-sm font-semibold text-cyan-50 whitespace-nowrap">${escapeHtml(item.rowName || item.method || 'Kayıt')}</td>
+                <td class="py-2.5 px-3 text-xs sm:text-sm text-cyan-100 whitespace-nowrap">${escapeHtml(item.date)}</td>
+                <td class="py-2.5 px-3 text-xs sm:text-sm text-cyan-50">${escapeHtml(item.method)}</td>
+                <td class="py-2.5 px-3 text-xs sm:text-sm text-cyan-200 whitespace-nowrap">${escapeHtml(item.duration)}</td>
+                <td class="py-2.5 px-3 text-xs sm:text-sm font-semibold text-cyan-200 whitespace-nowrap">${escapeHtml(item.waterAmount)}</td>
+                <td class="py-2.5 px-3 text-xs sm:text-sm whitespace-nowrap">
+                  <span class="rounded-full bg-cyan-500/20 border border-cyan-300/35 px-2.5 py-0.5 text-xs font-medium text-cyan-100">
+                    ${escapeHtml(item.status)}
+                  </span>
+                </td>
+                ${customCols
+                  .map(
+                    (colName) =>
+                      `<td class="py-2.5 px-3 text-xs sm:text-sm text-cyan-100 whitespace-nowrap">${escapeHtml(item.extraFields?.[colName] ?? '-')}</td>`
+                  )
+                  .join('')}
+              </tr>
+            `
+            )
+            .join('')
+        : `
+          <tr>
+            <td colspan="${7 + customCols.length}" class="py-5 px-3 text-center text-xs sm:text-sm text-cyan-200/75">
+              Bu tarla için kayıtlı sulama verisi bulunmuyor.
+            </td>
+          </tr>
+        `;
+
+      container.innerHTML = `
+        <div class="space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="text-sm sm:text-base font-bold text-cyan-200">Sulama Takip Tablosu</h3>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-cyan-300/80">${logs.length} kayıt</span>
+              <button
+                type="button"
+                onclick="openTableStructureModal('irrigation')"
+                title="Sütun ve Satır Ekle"
+                aria-label="Sulama Tablosu Sütun ve Satır Ayarları"
+                class="rounded-lg bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-300/45 p-1.5 text-xs font-bold text-cyan-100 transition cursor-pointer"
+              >
+                ⚙
+              </button>
+            </div>
+          </div>
+          <form onsubmit="addScreenIrrigationLog(event)" class="grid grid-cols-2 sm:grid-cols-7 gap-2 bg-cyan-950/35 border border-cyan-400/20 rounded-xl p-2.5">
+            <input name="rowName" type="text" placeholder="Satır adı" class="rounded-lg bg-slate-900 border border-cyan-400/25 px-2.5 py-1.5 text-xs sm:text-sm text-cyan-100" />
+            <input name="date" type="text" value="${today}" placeholder="Tarih" class="rounded-lg bg-slate-900 border border-cyan-400/25 px-2.5 py-1.5 text-xs sm:text-sm text-cyan-100" />
+            <input name="method" type="text" placeholder="Yöntem" class="rounded-lg bg-slate-900 border border-cyan-400/25 px-2.5 py-1.5 text-xs sm:text-sm text-cyan-100" />
+            <input name="duration" type="text" placeholder="Süre (örn. 5 saat)" class="rounded-lg bg-slate-900 border border-cyan-400/25 px-2.5 py-1.5 text-xs sm:text-sm text-cyan-100" />
+            <input name="waterAmount" type="text" placeholder="Miktar (örn. 30 mm)" class="rounded-lg bg-slate-900 border border-cyan-400/25 px-2.5 py-1.5 text-xs sm:text-sm text-cyan-100" />
+            <select name="status" class="rounded-lg bg-slate-900 border border-cyan-400/25 px-2.5 py-1.5 text-xs sm:text-sm text-cyan-100">
+              <option value="Tamamlandı">Tamamlandı</option>
+              <option value="Planlandı">Planlandı</option>
+              <option value="Beklemede">Beklemede</option>
+            </select>
+            <button type="submit" class="rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold px-3 py-1.5 text-xs sm:text-sm cursor-pointer transition">
+              + Kaydet
+            </button>
+          </form>
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-cyan-400/30 bg-cyan-950/50 text-[11px] sm:text-xs uppercase tracking-wider text-cyan-200">
+                <th class="py-2.5 px-3">#</th>
+                <th class="py-2.5 px-3">Satır Adı</th>
+                <th class="py-2.5 px-3">Tarih</th>
+                <th class="py-2.5 px-3">Yöntem</th>
+                <th class="py-2.5 px-3">Süre</th>
+                <th class="py-2.5 px-3">Miktar</th>
+                <th class="py-2.5 px-3">Durum</th>
+                ${customCols.map((colName) => `<th class="py-2.5 px-3">${escapeHtml(colName)}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+          <div class="pt-2.5 flex items-center gap-2.5">
+            <button
+              type="button"
+              onclick="nudgeTableScroll('irrigationDedicatedTableContainer', -140)"
+              aria-label="Sulama tablosunu sola kaydır"
+              class="rounded-lg bg-cyan-950/80 hover:bg-cyan-800/80 border border-cyan-400/35 px-2.5 py-1 text-xs font-bold text-cyan-100 cursor-pointer transition shrink-0"
+            >
+              ←
+            </button>
+            <input
+              id="irrigationTableScrollBar"
+              type="range"
+              min="0"
+              max="100"
+              value="0"
+              aria-label="Sulama tablosu yatay kaydırma çubuğu"
+              oninput="syncTableScrollFromBar('irrigationDedicatedTableContainer', this.value)"
+              class="w-full h-2 rounded-lg bg-cyan-950/90 accent-cyan-400 cursor-pointer"
+            />
+            <button
+              type="button"
+              onclick="nudgeTableScroll('irrigationDedicatedTableContainer', 140)"
+              aria-label="Sulama tablosunu sağa kaydır"
+              class="rounded-lg bg-cyan-950/80 hover:bg-cyan-800/80 border border-cyan-400/35 px-2.5 py-1 text-xs font-bold text-cyan-100 cursor-pointer transition shrink-0"
+            >
+              →
+            </button>
+          </div>
+        </div>
+      `;
+      bindTableScrollBar('irrigationDedicatedTableContainer', 'irrigationTableScrollBar');
+    }
+
+    // Ayrı Diğer İşlemler sayfasındaki tablo ve kayıt formunu çizer
+    function renderDedicatedOtherPage() {
+      const titleEl = document.getElementById('otherPageFieldTitle');
+      const metaEl = document.getElementById('otherPageFieldMeta');
+      const container = document.getElementById('otherDedicatedTableContainer');
+
+      const loc = portalState.locations[portalState.selectedLocationIndex];
+      const field = loc && loc.fields ? loc.fields[portalState.selectedFieldIndex] : null;
+      const today = formatTodayTurkish();
+
+      if (titleEl) {
+        titleEl.textContent = field ? field.name : 'Tarla Seçilmedi';
+      }
+      if (metaEl) {
+        metaEl.textContent = field
+          ? `${loc.name} Mevkisi • Ürün: ${field.crop} • Alan: ${field.donum} dönüm`
+          : 'Mevki ve ürün bilgisi burada görünür';
+      }
+
+      if (!container) return;
+
+      if (!field) {
+        container.innerHTML = `
+          <div class="text-xs sm:text-sm text-amber-200/80 text-center py-6">
+            Lütfen önce Mevkiler ekranından bir tarla seçin.
+          </div>
+        `;
+        return;
+      }
+
+      const customCols = Array.isArray(field.customOtherColumns) ? field.customOtherColumns : [];
+      const otherLogs = field.otherLogs || [];
+      const otherRowsHtml = otherLogs.length
+        ? otherLogs
+            .map(
+              (item, idx) => `
+              <tr class="border-b border-amber-400/15 hover:bg-amber-950/40 transition">
+                <td class="py-2.5 px-3 text-xs sm:text-sm font-bold text-amber-300 whitespace-nowrap">${idx + 1}</td>
+                <td class="py-2.5 px-3 text-xs sm:text-sm font-semibold text-amber-100 whitespace-nowrap">${escapeHtml(item.rowName || item.task || 'Kayıt')}</td>
+                <td class="py-2.5 px-3 text-xs sm:text-sm text-amber-100 whitespace-nowrap">${escapeHtml(item.date)}</td>
+                <td class="py-2.5 px-3 text-xs sm:text-sm font-semibold text-amber-50">${escapeHtml(item.task)}</td>
+                <td class="py-2.5 px-3 text-xs sm:text-sm text-amber-200/90">${escapeHtml(item.detail)}</td>
+                <td class="py-2.5 px-3 text-xs sm:text-sm whitespace-nowrap">
+                  <span class="rounded-full bg-amber-500/20 border border-amber-300/35 px-2.5 py-0.5 text-xs font-medium text-amber-100">
+                    ${escapeHtml(item.status)}
+                  </span>
+                </td>
+                ${customCols
+                  .map(
+                    (colName) =>
+                      `<td class="py-2.5 px-3 text-xs sm:text-sm text-amber-100 whitespace-nowrap">${escapeHtml(item.extraFields?.[colName] ?? '-')}</td>`
+                  )
+                  .join('')}
+              </tr>
+            `
+            )
+            .join('')
+        : `
+          <tr>
+            <td colspan="${6 + customCols.length}" class="py-5 px-3 text-center text-xs sm:text-sm text-amber-200/75">
+              Bu tarla için kayıtlı diğer işlem bulunmuyor.
+            </td>
+          </tr>
+        `;
+
+      container.innerHTML = `
+        <div class="space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="text-sm sm:text-base font-bold text-amber-200">Diğer İşlemler Kayıt Tablosu</h3>
+              <p class="text-[11px] sm:text-xs text-amber-200/70">Gübreleme, bakım, kontrol ve saha notlarını buradan yönetin.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="rounded-full bg-amber-500/15 border border-amber-400/30 px-3 py-1 text-xs font-semibold text-amber-200">
+                ${otherLogs.length} kayıt
+              </span>
+              <button
+                type="button"
+                onclick="openTableStructureModal('other')"
+                title="Sütun ve Satır Ekle"
+                aria-label="Diğer İşlemler Tablosu Sütun ve Satır Ayarları"
+                class="rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-300/45 p-1.5 text-xs font-bold text-amber-100 transition cursor-pointer"
+              >
+                ⚙
+              </button>
+            </div>
+          </div>
+          <form onsubmit="addScreenOtherLog(event)" class="grid grid-cols-1 sm:grid-cols-6 gap-2 bg-amber-950/35 border border-amber-400/20 rounded-xl p-2.5">
+            <input name="rowName" type="text" placeholder="Satır adı" class="rounded-lg bg-slate-900 border border-amber-400/25 px-2.5 py-1.5 text-xs sm:text-sm text-amber-100" />
+            <input name="date" type="text" value="${today}" placeholder="Tarih" class="rounded-lg bg-slate-900 border border-amber-400/25 px-2.5 py-1.5 text-xs sm:text-sm text-amber-100" />
+            <input name="task" type="text" placeholder="İşlem adı" class="rounded-lg bg-slate-900 border border-amber-400/25 px-2.5 py-1.5 text-xs sm:text-sm text-amber-100" />
+            <input name="detail" type="text" placeholder="Açıklama" class="rounded-lg bg-slate-900 border border-amber-400/25 px-2.5 py-1.5 text-xs sm:text-sm text-amber-100" />
+            <select name="status" class="rounded-lg bg-slate-900 border border-amber-400/25 px-2.5 py-1.5 text-xs sm:text-sm text-amber-100">
+              <option value="Tamamlandı">Tamamlandı</option>
+              <option value="Planlandı">Planlandı</option>
+              <option value="İyi">İyi</option>
+              <option value="Normal">Normal</option>
+            </select>
+            <button type="submit" class="rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-3 py-1.5 text-xs sm:text-sm cursor-pointer transition">
+              + Kaydet
+            </button>
+          </form>
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-amber-400/30 bg-amber-950/50 text-[11px] sm:text-xs uppercase tracking-wider text-amber-200">
+                <th class="py-2.5 px-3">#</th>
+                <th class="py-2.5 px-3">Satır Adı</th>
+                <th class="py-2.5 px-3">Tarih</th>
+                <th class="py-2.5 px-3">İşlem</th>
+                <th class="py-2.5 px-3">Açıklama</th>
+                <th class="py-2.5 px-3">Durum</th>
+                ${customCols.map((colName) => `<th class="py-2.5 px-3">${escapeHtml(colName)}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>${otherRowsHtml}</tbody>
+          </table>
+          <div class="pt-2.5 flex items-center gap-2.5">
+            <button
+              type="button"
+              onclick="nudgeTableScroll('otherDedicatedTableContainer', -140)"
+              aria-label="Diğer işlemler tablosunu sola kaydır"
+              class="rounded-lg bg-amber-950/80 hover:bg-amber-800/80 border border-amber-400/35 px-2.5 py-1 text-xs font-bold text-amber-100 cursor-pointer transition shrink-0"
+            >
+              ←
+            </button>
+            <input
+              id="otherTableScrollBar"
+              type="range"
+              min="0"
+              max="100"
+              value="0"
+              aria-label="Diğer işlemler tablosu yatay kaydırma çubuğu"
+              oninput="syncTableScrollFromBar('otherDedicatedTableContainer', this.value)"
+              class="w-full h-2 rounded-lg bg-amber-950/90 accent-amber-400 cursor-pointer"
+            />
+            <button
+              type="button"
+              onclick="nudgeTableScroll('otherDedicatedTableContainer', 140)"
+              aria-label="Diğer işlemler tablosunu sağa kaydır"
+              class="rounded-lg bg-amber-950/80 hover:bg-amber-800/80 border border-amber-400/35 px-2.5 py-1 text-xs font-bold text-amber-100 cursor-pointer transition shrink-0"
+            >
+              →
+            </button>
+          </div>
+        </div>
+      `;
+      bindTableScrollBar('otherDedicatedTableContainer', 'otherTableScrollBar');
+    }
+
+    // Seçili tarla ve tablo türüne (sulama veya diğer işlemler) göre sütun/satır modalını açar
+    function openTableStructureModal(targetType) {
+      const loc = portalState.locations[portalState.selectedLocationIndex];
+      const field = loc && loc.fields ? loc.fields[portalState.selectedFieldIndex] : null;
+      const feedback = document.getElementById('tableStructureFeedback');
+      if (!field) {
+        if (feedback) feedback.textContent = 'Lütfen önce bir tarla seçin.';
+        return;
+      }
+
+      portalState.structureModalTargetType = targetType === 'other' ? 'other' : 'irrigation';
+      const modal = document.getElementById('tableStructureModal');
+      const subtitle = document.getElementById('tableStructureSubtitle');
+      const colInput = document.getElementById('newCustomColumnNameInput');
+      const rowInput = document.getElementById('newCustomRowNameInput');
+
+      if (subtitle) {
+        const label = portalState.structureModalTargetType === 'other' ? 'Diğer İşlemler Tablosu' : 'Sulama Takip Tablosu';
+        subtitle.textContent = `${field.name} • ${label}`;
+      }
+      if (feedback) feedback.textContent = '';
+      if (colInput) colInput.value = '';
+      if (rowInput) rowInput.value = '';
+
+      renderTableStructureControls();
+      if (modal) modal.classList.remove('hidden');
+      if (colInput) colInput.focus();
+    }
+
+    function closeTableStructureModal() {
+      const modal = document.getElementById('tableStructureModal');
+      if (modal) modal.classList.add('hidden');
+      portalState.structureModalTargetType = null;
+    }
+
+    function handleTableStructureBackdropClick(event) {
+      if (event.target && event.target.id === 'tableStructureModal') {
+        closeTableStructureModal();
+      }
+    }
+
+    function getActiveCustomColumns(field) {
+      if (!field) return [];
+      if (portalState.structureModalTargetType === 'other') {
+        if (!Array.isArray(field.customOtherColumns)) field.customOtherColumns = [];
+        return field.customOtherColumns;
+      }
+      if (!Array.isArray(field.customIrrigationColumns)) field.customIrrigationColumns = [];
+      return field.customIrrigationColumns;
+    }
+
+    function renderTableStructureControls() {
+      const loc = portalState.locations[portalState.selectedLocationIndex];
+      const field = loc && loc.fields ? loc.fields[portalState.selectedFieldIndex] : null;
+      const chipsEl = document.getElementById('customColumnChips');
+      const dynFieldsEl = document.getElementById('newRowDynamicFields');
+      if (!field || !chipsEl || !dynFieldsEl) return;
+
+      const cols = getActiveCustomColumns(field);
+      chipsEl.innerHTML = cols.length
+        ? cols
+            .map(
+              (c) =>
+                `<span class="rounded-full bg-emerald-500/15 border border-emerald-400/30 px-2.5 py-0.5 text-[11px] text-emerald-100">${escapeHtml(c)}</span>`
+            )
+            .join('')
+        : '<span class="text-[11px] text-emerald-200/60">Henüz özel sütun eklenmedi.</span>';
+
+      dynFieldsEl.innerHTML = cols
+        .map(
+          (c, i) => `
+          <input
+            id="customRowVal-${i}"
+            type="text"
+            placeholder="${escapeHtml(c)} değeri..."
+            class="rounded-lg bg-slate-950 border border-emerald-400/25 px-2.5 py-1.5 text-xs text-emerald-50 placeholder-emerald-200/40 focus:outline-none focus:border-emerald-300"
+          />
+        `
+        )
+        .join('');
+    }
+
+    // Kullanıcının verdiği isimle yeni sütun ekler
+    function addCustomTableColumn() {
+      const loc = portalState.locations[portalState.selectedLocationIndex];
+      const field = loc && loc.fields ? loc.fields[portalState.selectedFieldIndex] : null;
+      const input = document.getElementById('newCustomColumnNameInput');
+      const feedback = document.getElementById('tableStructureFeedback');
+      if (!field || !input) return;
+
+      const colName = input.value.trim();
+      if (!colName) {
+        if (feedback) feedback.textContent = 'Lütfen yeni sütun için bir isim girin.';
+        return;
+      }
+
+      const cols = getActiveCustomColumns(field);
+      const exists = cols.some((c) => c.toLocaleLowerCase('tr') === colName.toLocaleLowerCase('tr'));
+      if (exists) {
+        if (feedback) feedback.textContent = `"${colName}" sütunu zaten mevcut.`;
+        return;
+      }
+
+      cols.push(colName);
+      saveLocations();
+      input.value = '';
+      if (feedback) feedback.textContent = `"${colName}" sütunu eklendi.`;
+      renderTableStructureControls();
+      renderDedicatedIrrigationPage();
+      renderDedicatedOtherPage();
+    }
+
+    // Kullanıcının verdiği satır adı ve sütun değerleriyle yeni satır ekler
+    function addCustomTableRow() {
+      const loc = portalState.locations[portalState.selectedLocationIndex];
+      const field = loc && loc.fields ? loc.fields[portalState.selectedFieldIndex] : null;
+      const rowNameInput = document.getElementById('newCustomRowNameInput');
+      const feedback = document.getElementById('tableStructureFeedback');
+      if (!field || !rowNameInput) return;
+
+      const rowName = rowNameInput.value.trim();
+      if (!rowName) {
+        if (feedback) feedback.textContent = 'Lütfen satır için bir isim girin.';
+        return;
+      }
+
+      const cols = getActiveCustomColumns(field);
+      const extraFields = {};
+      cols.forEach((colName, idx) => {
+        const valInput = document.getElementById(`customRowVal-${idx}`);
+        extraFields[colName] = valInput ? valInput.value.trim() || '-' : '-';
+      });
+
+      const today = formatTodayTurkish();
+      if (portalState.structureModalTargetType === 'other') {
+        if (!Array.isArray(field.otherLogs)) field.otherLogs = [];
+        field.otherLogs.unshift({
+          rowName,
+          date: today,
+          task: rowName,
+          detail: cols.length ? Object.values(extraFields).join(' • ') : 'Özel satır kaydı',
+          status: 'Tamamlandı',
+          extraFields
+        });
+      } else {
+        if (!Array.isArray(field.irrigationLogs)) field.irrigationLogs = [];
+        field.irrigationLogs.unshift({
+          rowName,
+          date: today,
+          method: rowName,
+          duration: '-',
+          waterAmount: '-',
+          status: 'Tamamlandı',
+          extraFields
+        });
+      }
+
+      saveLocations();
+      rowNameInput.value = '';
+      cols.forEach((_, idx) => {
+        const valInput = document.getElementById(`customRowVal-${idx}`);
+        if (valInput) valInput.value = '';
+      });
+      if (feedback) feedback.textContent = `"${rowName}" satırı tabloya eklendi.`;
+      renderDedicatedIrrigationPage();
+      renderDedicatedOtherPage();
+    }
+
+    // Tablo altındaki kaydırma çubuğundan tablo scroll pozisyonunu günceller
+    function syncTableScrollFromBar(containerId, percentValue) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const maxScroll = Math.max(0, container.scrollWidth - container.clientWidth);
+      const ratio = Math.max(0, Math.min(100, Number(percentValue) || 0)) / 100;
+      container.scrollLeft = maxScroll * ratio;
+    }
+
+    // Sol/sağ ok butonlarıyla tabloyu yatayda kaydırır
+    function nudgeTableScroll(containerId, deltaX) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.scrollBy({ left: deltaX, behavior: 'smooth' });
+    }
+
+    // Tablo yatay kaydırıldığında alttaki çubuğu senkronize eder
+    function bindTableScrollBar(containerId, barId) {
+      const container = document.getElementById(containerId);
+      const bar = document.getElementById(barId);
+      if (!container || !bar) return;
+
+      const updateBar = () => {
+        const maxScroll = Math.max(0, container.scrollWidth - container.clientWidth);
+        if (maxScroll <= 0) {
+          bar.value = 0;
+          return;
+        }
+        bar.value = Math.round((container.scrollLeft / maxScroll) * 100);
+      };
+
+      container.addEventListener('scroll', updateBar, { passive: true });
+      window.addEventListener('resize', updateBar, { passive: true });
+      requestAnimationFrame(updateBar);
+    }
+
+    function addScreenIrrigationLog(event) {
+      event.preventDefault();
+      const loc = portalState.locations[portalState.selectedLocationIndex];
+      const field = loc && loc.fields ? loc.fields[portalState.selectedFieldIndex] : null;
+      if (!field) return;
+
+      const form = event.target;
+      const rowName = (form.rowName?.value || '').trim();
+      const date = (form.date?.value || formatTodayTurkish()).trim();
+      const method = (form.method?.value || '').trim();
+      const duration = (form.duration?.value || '').trim();
+      const waterAmount = (form.waterAmount?.value || '').trim();
+      const status = (form.status?.value || 'Tamamlandı').trim();
+
+      if (!rowName && !method && !duration && !waterAmount) return;
+
+      if (!Array.isArray(field.irrigationLogs)) {
+        field.irrigationLogs = [];
+      }
+      field.irrigationLogs.unshift({
+        rowName: rowName || method || 'Sulama Kaydı',
+        date: date || formatTodayTurkish(),
+        method: method || rowName || 'Standart Sulama',
+        duration: duration || '-',
+        waterAmount: waterAmount || '-',
+        status
+      });
+
+      saveLocations();
+      if (form.rowName) form.rowName.value = '';
+      if (form.method) form.method.value = '';
+      if (form.duration) form.duration.value = '';
+      if (form.waterAmount) form.waterAmount.value = '';
+      renderDedicatedIrrigationPage();
+    }
+
+    function addScreenOtherLog(event) {
+      event.preventDefault();
+      const loc = portalState.locations[portalState.selectedLocationIndex];
+      const field = loc && loc.fields ? loc.fields[portalState.selectedFieldIndex] : null;
+      if (!field) return;
+
+      const form = event.target;
+      const rowName = (form.rowName?.value || '').trim();
+      const date = (form.date?.value || formatTodayTurkish()).trim();
+      const task = (form.task?.value || '').trim();
+      const detail = (form.detail?.value || '').trim();
+      const status = (form.status?.value || 'Tamamlandı').trim();
+
+      if (!rowName && !task && !detail) return;
+
+      if (!Array.isArray(field.otherLogs)) {
+        field.otherLogs = [];
+      }
+      field.otherLogs.unshift({
+        rowName: rowName || task || 'Saha İşlemi',
+        date: date || formatTodayTurkish(),
+        task: task || rowName || 'Saha İşlemi',
+        detail: detail || '-',
+        status
+      });
+
+      saveLocations();
+      if (form.rowName) form.rowName.value = '';
+      if (form.task) form.task.value = '';
+      if (form.detail) form.detail.value = '';
+      renderDedicatedOtherPage();
+    }
+
+    function toggleFieldInlineActions(locationIndex, fieldIndex) {
+      const key = `${locationIndex}-${fieldIndex}`;
+      portalState.expandedFieldKey = portalState.expandedFieldKey === key ? null : key;
+      renderLocationsList();
+    }
+
+    // Mevki ve tarla akordeon listesini render eder
+    function renderLocationsList() {
+      const container = document.getElementById('locationButtonsContainer');
+      if (!container) return;
+
+      container.innerHTML = '';
+      const total = portalState.locations.length;
+
+      portalState.locations.forEach((loc, idx) => {
+        const count = loc.fields.length;
+        const isExpanded = portalState.expandedLocationIndex === idx;
+        const isOddLast = total % 2 === 1 && idx === total - 1;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = `${isOddLast ? 'sm:col-span-2' : ''} rounded-xl ${
+          isExpanded
+            ? 'bg-gradient-to-b from-amber-950/90 to-emerald-950/85 border border-amber-300/65 shadow-lg shadow-amber-950/50'
+            : 'bg-emerald-950/80 border border-emerald-400/30 hover:border-emerald-300/50'
+        } overflow-hidden transition`;
+
+        const headerBtn = document.createElement('button');
+        headerBtn.type = 'button';
+        headerBtn.className = `w-full text-left ${
+          isExpanded ? 'bg-amber-500/15 hover:bg-amber-500/20' : 'hover:bg-emerald-900/60'
+        } p-4 flex items-center justify-between gap-3 transition cursor-pointer`;
+        headerBtn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+        headerBtn.onclick = () => toggleMevkiAccordion(idx);
+        headerBtn.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-base ${isExpanded ? 'text-amber-100' : 'text-emerald-50'}">${escapeHtml(loc.name)}</span>
+            <span class="text-xs ${isExpanded ? 'text-amber-300' : 'text-emerald-300/80'} transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}" aria-hidden="true">▾</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs sm:text-sm font-medium px-3 py-1 rounded-lg ${
+              isExpanded
+                ? 'bg-amber-400/20 text-amber-200 border border-amber-300/35'
+                : 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/25'
+            }">
+              ${count} tarla
+            </span>
+            <button
+              type="button"
+              ${isExpanded ? `onclick="event.stopPropagation(); openFieldManageModal(${idx});"` : 'disabled aria-disabled="true" tabindex="-1" onclick="event.stopPropagation();"'}
+              title="${isExpanded ? `${escapeHtml(loc.name)} Tarla Ayarları` : 'Önce mevki ismine tıklayın'}"
+              aria-label="${escapeHtml(loc.name)} Tarla Ayarları"
+              class="rounded-lg p-1.5 text-xs transition ${
+                isExpanded
+                  ? 'bg-amber-500/25 hover:bg-amber-500/40 border border-amber-300/50 text-amber-200 cursor-pointer'
+                  : 'bg-slate-900/50 border border-emerald-400/15 text-emerald-300/30 opacity-45 cursor-not-allowed'
+              }"
+            >
+              ⚙
+            </button>
+          </div>
+        `;
+
+        wrapper.appendChild(headerBtn);
+
+        if (isExpanded) {
+          const panel = document.createElement('div');
+          panel.className = 'border-t border-amber-300/25 bg-amber-950/45 px-4 py-3 space-y-2.5';
+
+          if (!loc.fields || loc.fields.length === 0) {
+            panel.innerHTML = `
+              <div class="text-xs text-amber-200/80 py-1">
+                Bu mevkiye ait kayıtlı tarla bulunmuyor.
+              </div>
+            `;
+          } else {
+            loc.fields.forEach((field, fIdx) => {
+              const fieldKey = `${idx}-${fIdx}`;
+              const isFieldExpanded = portalState.expandedFieldKey === fieldKey;
+              const cropBgUrl = getCropBackgroundUrl(field.crop);
+
+              const row = document.createElement('div');
+              row.className = 'rounded-lg bg-stone-950/65 border border-amber-300/25 overflow-hidden space-y-2';
+              row.innerHTML = `
+                <div
+                  class="field-crop-btn p-2.5 flex flex-wrap items-center justify-between gap-2"
+                  style="background-image: url('${escapeHtml(cropBgUrl)}');"
+                >
+                  <button
+                    type="button"
+                    onclick="toggleFieldInlineActions(${idx}, ${fIdx})"
+                    aria-expanded="${isFieldExpanded ? 'true' : 'false'}"
+                    class="text-left group cursor-pointer flex-1 min-w-[160px] rounded-md px-1 py-0.5 hover:bg-amber-500/10 transition"
+                  >
+                    <div class="text-xs sm:text-sm font-semibold ${isFieldExpanded ? 'text-emerald-300' : 'text-amber-100 group-hover:text-emerald-300'} transition flex items-center gap-1.5">
+                      <span>${escapeHtml(field.name)}</span>
+                      <span class="text-[11px] text-amber-300 transition-transform duration-200 ${isFieldExpanded ? 'rotate-180' : ''}" aria-hidden="true">▾</span>
+                    </div>
+                    <div class="text-[11px] sm:text-xs text-amber-200/85">Ürün: ${escapeHtml(field.crop)}</div>
+                  </button>
+                  <span class="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-stone-950/75 text-amber-200 border border-amber-300/35">
+                    ${escapeHtml(field.donum)} dönüm
+                  </span>
+                </div>
+                ${
+                  isFieldExpanded
+                    ? `
+                      <div class="px-2.5 pb-2.5 pt-1 border-t border-amber-300/20">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onclick="openDedicatedIrrigationPage(${idx}, ${fIdx})"
+                            class="w-full rounded-lg border px-3 py-2 text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 bg-cyan-950/70 hover:bg-cyan-800/80 border-cyan-400/40 text-cyan-100"
+                          >
+                            <span aria-hidden="true">💧</span>
+                            <span>Sulama Takip →</span>
+                          </button>
+                          <button
+                            type="button"
+                            onclick="openDedicatedOtherPage(${idx}, ${fIdx})"
+                            class="w-full rounded-lg border px-3 py-2 text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 bg-amber-950/70 hover:bg-amber-800/80 border-amber-400/40 text-amber-100"
+                          >
+                            <span aria-hidden="true">📋</span>
+                            <span>Diğer İşlemler →</span>
+                          </button>
+                        </div>
+                      </div>
+                    `
+                    : ''
+                }
+              `;
+              panel.appendChild(row);
+            });
+          }
+
+          wrapper.appendChild(panel);
+        }
+
+        container.appendChild(wrapper);
+      });
+
+      renderMevkiDeleteList();
+    }
+
+    function toggleMevkiAccordion(locationIndex) {
+      portalState.expandedLocationIndex =
+        portalState.expandedLocationIndex === locationIndex ? null : locationIndex;
+      portalState.expandedFieldKey = null;
+      renderLocationsList();
+    }
+
+    // Seçilen mevki için Tarla Ekle / İsim Ver / Kaldır penceresini açar
+    function openFieldManageModal(locationIndex) {
+      const loc = portalState.locations[locationIndex];
+      if (!loc) return;
+      portalState.managingLocationIndex = locationIndex;
+      portalState.pendingFieldDeleteIndex = null;
+
+      const modal = document.getElementById('fieldManageModal');
+      const subtitle = document.getElementById('fieldManageLocationSubtitle');
+      const feedback = document.getElementById('fieldManageFeedback');
+      const nameInput = document.getElementById('newFieldNameInput');
+      const cropInput = document.getElementById('newFieldCropInput');
+      const donumInput = document.getElementById('newFieldDonumInput');
+
+      if (subtitle) {
+        subtitle.textContent = `Seçili Mevki: ${loc.name}`;
+      }
+      if (feedback) {
+        feedback.textContent = '';
+      }
+      if (nameInput) nameInput.value = '';
+      if (cropInput) cropInput.value = '';
+      if (donumInput) donumInput.value = '';
+
+      if (modal) {
+        modal.classList.remove('hidden');
+      }
+      renderFieldManageList();
+      if (nameInput) nameInput.focus();
+    }
+
+    function closeFieldManageModal() {
+      const modal = document.getElementById('fieldManageModal');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+      portalState.managingLocationIndex = null;
+      portalState.pendingFieldDeleteIndex = null;
+    }
+
+    function handleFieldManageBackdropClick(event) {
+      if (event.target && event.target.id === 'fieldManageModal') {
+        closeFieldManageModal();
+      }
+    }
+
+    // Seçili mevkiye yeni tarla ekler
+    function addFieldToLocation(event) {
+      event.preventDefault();
+      const locIdx = portalState.managingLocationIndex;
+      const loc = portalState.locations[locIdx];
+      const feedback = document.getElementById('fieldManageFeedback');
+      if (!loc) return;
+
+      const nameInput = document.getElementById('newFieldNameInput');
+      const cropInput = document.getElementById('newFieldCropInput');
+      const donumInput = document.getElementById('newFieldDonumInput');
+
+      const rawName = nameInput ? nameInput.value.trim() : '';
+      const rawCrop = cropInput ? cropInput.value.trim() : '';
+      const parsedDonum = donumInput ? parseFloat(donumInput.value) : NaN;
+
+      if (!rawName) {
+        if (feedback) feedback.textContent = 'Lütfen tarla için bir isim girin.';
+        return;
+      }
+
+      const nextId =
+        loc.fields.reduce((maxId, f) => Math.max(maxId, Number(f.id) || 0), 0) + 1;
+
+      loc.fields.push({
+        id: nextId,
+        name: rawName,
+        donum: Number.isFinite(parsedDonum) && parsedDonum > 0 ? parsedDonum : 25,
+        crop: rawCrop || 'Belirtilmedi',
+        irrigationLogs: [],
+        otherLogs: []
+      });
+
+      saveLocations();
+      if (nameInput) nameInput.value = '';
+      if (cropInput) cropInput.selectedIndex = 0;
+      if (donumInput) donumInput.value = '';
+      portalState.pendingFieldDeleteIndex = null;
+
+      if (feedback) {
+        feedback.textContent = `"${rawName}" tarlası ${loc.name} mevkisine eklendi.`;
+      }
+      renderLocationsList();
+      renderFieldManageList();
+    }
+
+    // Tarla ismini günceller ("İsim Ver" / "Kaydet")
+    function renameFieldInLocation(fieldIndex) {
+      const locIdx = portalState.managingLocationIndex;
+      const loc = portalState.locations[locIdx];
+      const feedback = document.getElementById('fieldManageFeedback');
+      if (!loc || !loc.fields[fieldIndex]) return;
+
+      const inputEl = document.getElementById(`renameFieldInput-${fieldIndex}`);
+      const newName = inputEl ? inputEl.value.trim() : '';
+      if (!newName) {
+        if (feedback) feedback.textContent = 'Tarla adı boş bırakılamaz.';
+        return;
+      }
+
+      loc.fields[fieldIndex].name = newName;
+      saveLocations();
+      if (feedback) {
+        feedback.textContent = `Tarla adı "${newName}" olarak güncellendi.`;
+      }
+      renderLocationsList();
+      renderFieldManageList();
+    }
+
+    function requestDeleteFieldFromLocation(fieldIndex) {
+      portalState.pendingFieldDeleteIndex = fieldIndex;
+      const loc = portalState.locations[portalState.managingLocationIndex];
+      const feedback = document.getElementById('fieldManageFeedback');
+      const target = loc?.fields?.[fieldIndex];
+      if (feedback && target) {
+        feedback.textContent = `"${target.name}" tarlasını kaldırmak için Kaldır butonuna tekrar basın.`;
+      }
+      renderFieldManageList();
+    }
+
+    // Tarlayı seçili mevkiden kaldırır
+    function confirmDeleteFieldFromLocation(fieldIndex) {
+      const locIdx = portalState.managingLocationIndex;
+      const loc = portalState.locations[locIdx];
+      const feedback = document.getElementById('fieldManageFeedback');
+      if (!loc || !loc.fields[fieldIndex]) return;
+
+      const [removed] = loc.fields.splice(fieldIndex, 1);
+      portalState.pendingFieldDeleteIndex = null;
+      portalState.expandedFieldKey = null;
+      saveLocations();
+
+      if (feedback && removed) {
+        feedback.textContent = `"${removed.name}" tarlası kaldırıldı.`;
+      }
+      renderLocationsList();
+      renderFieldManageList();
+    }
+
+    // Tarla yönetim penceresindeki isim verme ve kaldırma satırlarını çizer
+    function renderFieldManageList() {
+      const listEl = document.getElementById('fieldManageList');
+      const loc = portalState.locations[portalState.managingLocationIndex];
+      if (!listEl || !loc) return;
+
+      listEl.innerHTML = '';
+      if (!loc.fields || loc.fields.length === 0) {
+        listEl.innerHTML = '<div class="text-xs text-emerald-200/75 py-2">Bu mevkiye henüz tarla eklenmemiş.</div>';
+        return;
+      }
+
+      loc.fields.forEach((field, fIdx) => {
+        const isConfirming = portalState.pendingFieldDeleteIndex === fIdx;
+        const row = document.createElement('div');
+        row.className = 'rounded-xl bg-slate-900/85 border border-emerald-400/20 p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2';
+        row.innerHTML = `
+          <div class="flex-1 flex flex-col sm:flex-row sm:items-center gap-2">
+            <input
+              id="renameFieldInput-${fIdx}"
+              type="text"
+              value="${escapeHtml(field.name)}"
+              aria-label="Tarla Adı"
+              class="flex-1 rounded-lg bg-slate-950 border border-emerald-400/30 px-2.5 py-1.5 text-xs sm:text-sm text-emerald-50 focus:outline-none focus:border-amber-300"
+            />
+            <span class="text-[11px] text-emerald-300/80 whitespace-nowrap">
+              ${escapeHtml(field.crop)} • ${escapeHtml(field.donum)} dönüm
+            </span>
+          </div>
+          <div class="flex items-center gap-1.5 justify-end">
+            <button
+              type="button"
+              onclick="renameFieldInLocation(${fIdx})"
+              class="rounded-lg bg-amber-500/25 hover:bg-amber-500/40 border border-amber-300/40 px-2.5 py-1 text-xs font-semibold text-amber-100 transition cursor-pointer"
+            >
+              İsim Ver
+            </button>
+            <button
+              type="button"
+              onclick="${isConfirming ? `confirmDeleteFieldFromLocation(${fIdx})` : `requestDeleteFieldFromLocation(${fIdx})`}"
+              class="rounded-lg ${
+                isConfirming
+                  ? 'bg-red-600 hover:bg-red-500 text-white border-red-300/40'
+                  : 'bg-red-950/80 hover:bg-red-900 text-red-200 border-red-400/30'
+              } border px-2.5 py-1 text-xs font-semibold transition cursor-pointer"
+            >
+              ${isConfirming ? 'Onayla Kaldır' : 'Kaldır'}
+            </button>
+          </div>
+        `;
+        listEl.appendChild(row);
+      });
+    }
+
+    function toggleMevkiGearPanel() {
+      const modal = document.getElementById('mevkiGearModal');
+      if (!modal) return;
+      const isHidden = modal.classList.contains('hidden');
+      if (isHidden) {
+        openMevkiGearModal();
+      } else {
+        closeMevkiGearModal();
+      }
+    }
+
+    function openMevkiGearModal() {
+      const modal = document.getElementById('mevkiGearModal');
+      if (!modal) return;
+      portalState.pendingDeleteIndex = null;
+      const feedback = document.getElementById('mevkiGearFeedback');
+      if (feedback) feedback.textContent = '';
+      modal.classList.remove('hidden');
+      renderMevkiDeleteList();
+      const input = document.getElementById('newMevkiNameInput');
+      if (input) input.focus();
+    }
+
+    function closeMevkiGearModal() {
+      const modal = document.getElementById('mevkiGearModal');
+      if (!modal) return;
+      portalState.pendingDeleteIndex = null;
+      modal.classList.add('hidden');
+    }
+
+    function handleModalBackdropClick(event) {
+      if (event.target && event.target.id === 'mevkiGearModal') {
+        closeMevkiGearModal();
+      }
+    }
+
+    function addMevkiItem() {
+      const input = document.getElementById('newMevkiNameInput');
+      const feedback = document.getElementById('mevkiGearFeedback');
+      if (!input) return;
+
+      const trimmedName = input.value.trim();
+      if (!trimmedName) {
+        if (feedback) feedback.textContent = 'Lütfen bir mevki adı girin.';
+        return;
+      }
+
+      const exists = portalState.locations.some(
+        (loc) => loc.name.toLocaleLowerCase('tr') === trimmedName.toLocaleLowerCase('tr')
+      );
+      if (exists) {
+        if (feedback) feedback.textContent = `"${trimmedName}" mevkisi zaten listede var.`;
+        return;
+      }
+
+      portalState.locations.push({
+        name: trimmedName,
+        fields: []
+      });
+
+      saveLocations();
+      input.value = '';
+      portalState.pendingDeleteIndex = null;
+      if (feedback) feedback.textContent = `"${trimmedName}" mevkisi eklendi.`;
+      renderLocationsList();
+    }
+
+    function requestDeleteMevki(index) {
+      portalState.pendingDeleteIndex = index;
+      const feedback = document.getElementById('mevkiGearFeedback');
+      const target = portalState.locations[index];
+      if (feedback && target) {
+        feedback.textContent = `"${target.name}" mevkisini silmek için Sil butonuna tekrar basın.`;
+      }
+      renderMevkiDeleteList();
+    }
+
+    function confirmDeleteMevki(index) {
+      const feedback = document.getElementById('mevkiGearFeedback');
+      const removed = portalState.locations[index];
+      if (!removed) return;
+
+      portalState.locations.splice(index, 1);
+      saveLocations();
+      portalState.pendingDeleteIndex = null;
+      if (portalState.expandedLocationIndex === index) {
+        portalState.expandedLocationIndex = null;
+      } else if (
+        portalState.expandedLocationIndex !== null &&
+        portalState.expandedLocationIndex > index
+      ) {
+        portalState.expandedLocationIndex -= 1;
+      }
+      portalState.expandedFieldKey = null;
+      if (feedback) {
+        feedback.textContent = `"${removed.name}" mevkisi silindi.`;
+      }
+      renderLocationsList();
+    }
+
+    function renderMevkiDeleteList() {
+      const listEl = document.getElementById('mevkiDeleteList');
+      if (!listEl) return;
+
+      listEl.innerHTML = '';
+      if (portalState.locations.length === 0) {
+        listEl.innerHTML = '<div class="text-xs text-emerald-200/70">Silinecek kayıtlı mevki bulunmuyor.</div>';
+        return;
+      }
+
+      portalState.locations.forEach((loc, idx) => {
+        const isConfirming = portalState.pendingDeleteIndex === idx;
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between gap-2 rounded-lg bg-emerald-950/70 border border-emerald-400/20 px-3 py-2';
+        row.innerHTML = `
+          <span class="text-xs sm:text-sm font-medium text-emerald-100">${escapeHtml(loc.name)}</span>
+          <button
+            type="button"
+            onclick="${isConfirming ? `confirmDeleteMevki(${idx})` : `requestDeleteMevki(${idx})`}"
+            class="rounded-lg ${
+              isConfirming
+                ? 'bg-red-600 hover:bg-red-500 text-white border-red-300/40'
+                : 'bg-red-950/80 hover:bg-red-900 text-red-200 border-red-400/30'
+            } border px-3 py-1 text-xs font-semibold transition cursor-pointer"
+          >
+            ${isConfirming ? 'Onayla Sil' : 'Sil'}
+          </button>
+        `;
+        listEl.appendChild(row);
+      });
+    }
+
+    // Fare, dokunmatik kaydırma, tekerlek ve klavye geçiş olayları
+    if (sliderEl) {
+      sliderEl.addEventListener('pointerdown', (event) => {
+        if (portalState.scrollLockedCompletely || event.pointerType !== 'mouse' || event.button !== 0) {
+          return;
+        }
+        if (event.target.closest('button, input, select, a')) {
+          return;
+        }
+        isPointerDragging = true;
+        hasDraggedDistance = false;
+        dragStartX = event.clientX;
+        dragStartY = event.clientY;
+        dragStartScrollLeft = sliderEl.scrollLeft;
+        sliderEl.classList.add('is-dragging');
+      });
+
+      window.addEventListener('pointermove', (event) => {
+        if (!isPointerDragging) return;
+        const deltaX = event.clientX - dragStartX;
+        const deltaY = event.clientY - dragStartY;
+        if (Math.abs(deltaX) > 4) {
+          hasDraggedDistance = true;
+        }
+        if (Math.abs(deltaX) >= Math.abs(deltaY)) {
+          const screenWidth = sliderEl.clientWidth || window.innerWidth;
+          // 2., 3. ve 4. sayfalarda sola kaydırarak (deltaX < 0) ileri kaymayı engeller
+          const effectiveDeltaX =
+            deltaX < 0 &&
+            (portalState.currentScreenIndex === 1 ||
+              portalState.currentScreenIndex === 2 ||
+              portalState.currentScreenIndex === 3)
+              ? 0
+              : deltaX;
+          const nextScrollLeft = dragStartScrollLeft - effectiveDeltaX;
+          sliderEl.scrollLeft = nextScrollLeft;
+        }
+      }, { passive: true });
+
+      window.addEventListener('pointerup', (event) => {
+        if (!isPointerDragging) return;
+        const deltaX = event.clientX - dragStartX;
+        isPointerDragging = false;
+        sliderEl.classList.remove('is-dragging');
+        const screenWidth = sliderEl.clientWidth || window.innerWidth;
+        if (screenWidth > 0) {
+          snapToNearestOrDirectionalScreen(deltaX, screenWidth);
+        }
+      });
+
+      sliderEl.addEventListener('touchstart', (event) => {
+        if (portalState.scrollLockedCompletely || !event.touches || event.touches.length === 0) {
+          return;
+        }
+        if (event.target.closest('button, input, select, a')) {
+          return;
+        }
+        const touch = event.touches[0];
+        isTouchSwiping = true;
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        touchStartScrollLeft = sliderEl.scrollLeft;
+        sliderEl.style.scrollSnapType = 'none';
+        sliderEl.style.scrollBehavior = 'auto';
+      }, { passive: true });
+
+      sliderEl.addEventListener('touchmove', (event) => {
+        if (portalState.scrollLockedCompletely) {
+          event.preventDefault();
+          return;
+        }
+        if (!isTouchSwiping || !event.touches || event.touches.length === 0) return;
+        const touch = event.touches[0];
+        const deltaX = touch.clientX - touchStartX;
+        const deltaY = touch.clientY - touchStartY;
+
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 6) {
+          event.preventDefault();
+          const screenWidth = sliderEl.clientWidth || window.innerWidth;
+          // 2., 3. ve 4. sayfalarda sola kaydırarak (deltaX < 0) ileri kaymayı engeller
+          const effectiveDeltaX =
+            deltaX < 0 &&
+            (portalState.currentScreenIndex === 1 ||
+              portalState.currentScreenIndex === 2 ||
+              portalState.currentScreenIndex === 3)
+              ? 0
+              : deltaX;
+          const nextScrollLeft = touchStartScrollLeft - effectiveDeltaX;
+          sliderEl.scrollLeft = nextScrollLeft;
+        }
+      }, { passive: false });
+
+      sliderEl.addEventListener('touchend', (event) => {
+        if (!isTouchSwiping) return;
+        isTouchSwiping = false;
+        sliderEl.style.scrollSnapType = 'x mandatory';
+        sliderEl.style.scrollBehavior = 'smooth';
+
+        const changedTouch = event.changedTouches && event.changedTouches[0];
+        const deltaX = changedTouch ? changedTouch.clientX - touchStartX : 0;
+        const screenWidth = sliderEl.clientWidth || window.innerWidth;
+        if (screenWidth > 0) {
+          snapToNearestOrDirectionalScreen(deltaX, screenWidth);
+        }
+      }, { passive: true });
+
+      sliderEl.addEventListener('click', (event) => {
+        if (hasDraggedDistance) {
+          event.preventDefault();
+          event.stopPropagation();
+          hasDraggedDistance = false;
+        }
+      }, true);
+
+      sliderEl.addEventListener('wheel', (event) => {
+        if (portalState.scrollLockedCompletely) {
+          event.preventDefault();
+          return;
+        }
+        const delta = Math.abs(event.deltaY) > Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
+        if (delta !== 0) {
+          event.preventDefault();
+          const screenWidth = sliderEl.clientWidth || window.innerWidth;
+          // 4. sayfadan (index 3) 3. sayfaya (index 2) tekerlekle kaydırmayı sınırlar
+          if (portalState.currentScreenIndex === 3 && delta < 0 && !portalState.irrigationPageUnlocked) {
+            return;
+          }
+          const nextLeft = sliderEl.scrollLeft + delta;
+          if (
+            screenWidth > 0 &&
+            !portalState.irrigationPageUnlocked &&
+            nextLeft > screenWidth * 1.5 &&
+            portalState.currentScreenIndex < 3
+          ) {
+            sliderEl.scrollLeft = Math.min(sliderEl.scrollLeft, screenWidth * 1);
+            return;
+          }
+          sliderEl.scrollBy({ left: delta, behavior: 'auto' });
+        }
+      }, { passive: false });
+
+      window.addEventListener('keydown', (event) => {
+        if (portalState.scrollLockedCompletely) return;
+        const modal = document.getElementById('mevkiGearModal');
+        const isModalOpen = modal && !modal.classList.contains('hidden');
+        const activeTag = document.activeElement ? document.activeElement.tagName : '';
+        if (isModalOpen || activeTag === 'INPUT' || activeTag === 'SELECT' || activeTag === 'TEXTAREA') return;
+
+        const maxIndex = sliderEl ? Math.max(0, sliderEl.children.length - 1) : 3;
+        if (event.key === 'ArrowRight') {
+          if (portalState.currentScreenIndex === 1) return;
+          const nextIdx = Math.min(maxIndex, portalState.currentScreenIndex + 1);
+          if (nextIdx === 2 && !portalState.irrigationPageUnlocked) return;
+          navigateToScreen(nextIdx);
+        } else if (event.key === 'ArrowLeft') {
+          // 4. sayfadan geri dönerken 3. sayfayı atlayıp doğrudan 2. sayfaya geçer
+          if (portalState.currentScreenIndex === 3) {
+            navigateToScreen(1);
+            return;
+          }
+          const prevIdx = Math.max(0, portalState.currentScreenIndex - 1);
+          if (prevIdx === 2 && !portalState.irrigationPageUnlocked) {
+            navigateToScreen(1);
+            return;
+          }
+          navigateToScreen(prevIdx);
+        }
+      });
+
+      sliderEl.addEventListener('scroll', () => {
+        if (portalState.scrollLockedCompletely) {
+          const screenWidth = sliderEl.clientWidth || window.innerWidth;
+          sliderEl.scrollLeft = screenWidth * portalState.currentScreenIndex;
+          return;
+        }
+        if (isTouchSwiping || isPointerDragging) return;
+        const screenWidth = sliderEl.clientWidth || window.innerWidth;
+        const maxIndex = sliderEl ? Math.max(0, sliderEl.children.length - 1) : 3;
+        if (screenWidth > 0) {
+          const rawIndex = Math.max(0, Math.min(maxIndex, Math.round(sliderEl.scrollLeft / screenWidth)));
+          // 4. sayfadan geri gelirken 3. sayfa görünmesin diye doğrudan 2. sayfaya (index 1) çeker
+          if (portalState.currentScreenIndex === 3 && rawIndex === 2) {
+            navigateToScreen(1);
+            return;
+          }
+          // 3. sayfaya kaydırma ile geçiş engellendiyse geri çeker
+          if (rawIndex === 2 && !portalState.irrigationPageUnlocked) {
+            const fallbackIndex = portalState.currentScreenIndex === 3 ? 1 : 1;
+            sliderEl.scrollTo({ left: screenWidth * fallbackIndex, behavior: 'auto' });
+            portalState.currentScreenIndex = fallbackIndex;
+            return;
+          }
+          if (rawIndex === 2) {
+            portalState.irrigationPageUnlocked = true;
+            renderDedicatedIrrigationPage();
+          } else if (rawIndex === 3) {
+            renderDedicatedOtherPage();
+          }
+          portalState.currentScreenIndex = rawIndex;
+        }
+      }, { passive: true });
+
+      window.addEventListener('resize', () => {
+        if (!sliderEl) return;
+        const screenWidth = sliderEl.clientWidth || window.innerWidth;
+        sliderEl.scrollTo({ left: screenWidth * portalState.currentScreenIndex, behavior: 'auto' });
+      }, { passive: true });
+    }
+
+    // İlk yüklemede arayüzü başlat
+    syncScrollLockClasses();
+    updateActiveUserLabel();
+    renderLocationsList();
+    renderDedicatedIrrigationPage();
+    renderDedicatedOtherPage();
+    initBackgroundMusic();
+  </script>
+</body>
+</html>
